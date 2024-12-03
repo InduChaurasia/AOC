@@ -1,12 +1,10 @@
 package com.aoc.challange.year_2024;
 
 import com.aoc.challange.utils.InputFormatter;
-import com.google.common.collect.Collections2;
 
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 
 /**
