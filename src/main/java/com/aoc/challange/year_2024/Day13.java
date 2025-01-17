@@ -62,22 +62,26 @@ public class Day13 {
         return input;
     }
 
-    private void solution() {
+    private void solution(boolean isPart1) {
+
+        double add = isPart1 ? 0d : 10000000000000d;
+
         int coinA = 3;
         int coinB = 1;
-        int cost = 0;
+        double cost = 0;
         for (Prize prize : readInput()) {
-            ClawMachine m = prize.cm;
-            float bn = (prize.Y * m.ax - prize.X * m.ay) / (m.ax * m.by - m.ay * m.bx);
-            float an = (prize.X - bn * m.bx) / m.ax;
 
-            if (an == (int) an && bn == (int) bn && (int)an<=100 && (int)bn<=100) {
+            ClawMachine m = prize.cm;
+            double bn = ((prize.Y + add) * m.ax - (prize.X + add) * m.ay) / (m.ax * m.by - m.ay * m.bx);
+            double an = ((prize.X + add) - bn * m.bx) / m.ax;
+
+            if (an % 1 == 0 && bn % 1 == 0 && (!isPart1 || ((long) an <= 100 && (long) bn <= 100))) {
                 System.out.println("Hit A " + an + " times, Hit B " + bn + " times to reach (" + prize.X + "," + prize.Y + ")");
-                cost += (int) an * coinA + (int) bn * coinB;
+                cost += an * coinA + bn * coinB;
             }
 
         }
-        System.out.println(cost);
+        System.out.println((long) cost);
     }
 
 
@@ -88,6 +92,9 @@ public class Day13 {
         float an = (X - bn * m.bx) / m.ax;*/
 
         Day13 d = new Day13();
-        d.solution();
+        d.solution(true);
+        d.solution(false);
+
+        // System.out.println(BigDecimal.valueOf(10000000000000f*100).compareTo(BigDecimal.valueOf(Float.MAX_VALUE)));
     }
 }
