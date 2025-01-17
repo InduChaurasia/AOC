@@ -4,9 +4,14 @@ import com.aoc.challange.utils.InputFormatter;
 
 import java.util.*;
 
+/**
+ * @see <a href="https://adventofcode.com/2024/day/12">problem description</a>
+ * @see <a href="https://adventofcode.com/2024/day/12/input">input</a>
+ */
 public class Day12 {
 
     private static final char[][] gardenMap = Day12.readInput();
+    private static Plant[][] plantsFenceMap;
 
     private enum DIRECTION {
         UP,
@@ -51,9 +56,15 @@ public class Day12 {
         return gardenMap;
     }
 
-    private void solutionPart1() {
+    private void solution(String solutionPart) {
+
+        boolean isPart1 = solutionPart.equals("1");
         List<Region> regions = new ArrayList<>();
         int columns = gardenMap[0].length;
+        if(!isPart1) {
+            plantsFenceMap = new Plant[gardenMap.length][columns];
+        }
+
         Queue<Plant> regionPlantsQueue = new LinkedList<>();
         Queue<Plant> gardenPlantsQueue = new LinkedList<>();
         List<Plant> processedPlants = new ArrayList<>();
@@ -71,7 +82,8 @@ public class Day12 {
                     int r = currentRegionPlant.row;
                     int c = currentRegionPlant.column;
                     plantType = gardenMap[r][c];
-                    fenceSize = fenceSize + getFenceDirections(r, c).size();
+                    Set<DIRECTION> fenceDirections = isPart1?getFenceDirections(r, c):getOverlappedFenceDirections(r,c);
+                    fenceSize = fenceSize + fenceDirections.size();
                     processedPlants.add(currentRegionPlant);
                     regionPlants.add(currentRegionPlant);
 
@@ -116,7 +128,6 @@ public class Day12 {
         int totalFenceSize = regions.stream().peek(r -> System.out.printf("Region of %s plants with price %s * %s = %s%n", r.plantType, r.plants.size(), r.fenceSize, r.plants.size() * r.fenceSize)).map(r -> r.fenceSize * r.plants.size()).mapToInt(Integer::valueOf).sum();
         System.out.println("Fence Size : " + totalFenceSize);
     }
-
     private Set<DIRECTION> getFenceDirections(int r, int c) {
         int columns = gardenMap[0].length;
         char plant = gardenMap[r][c];
@@ -136,8 +147,91 @@ public class Day12 {
         return fenceDirections;
     }
 
+    private Set<DIRECTION> getOverlappedFenceDirections(int r, int c) {
+        Set<DIRECTION> applicableFences = getFenceDirections(r, c);
+        Set<DIRECTION> overlappedFences = new HashSet<>();
+        if (applicableFences.contains(DIRECTION.LEFT)) {
+            //up down
+            if (upDownPlantHasNoFenceForDirection(r, c, DIRECTION.LEFT)) {
+                overlappedFences.add(DIRECTION.LEFT);
+            }
+        }
+        if (applicableFences.contains(DIRECTION.UP)) {
+            //left right
+            if (leftRightPlantHasNoFenceForDirection(r, c, DIRECTION.UP)) {
+                overlappedFences.add(DIRECTION.UP);
+            }
+        }
+        if (applicableFences.contains(DIRECTION.RIGHT)) {
+            //up down
+            if (upDownPlantHasNoFenceForDirection(r, c, DIRECTION.RIGHT)) {
+                overlappedFences.add(DIRECTION.RIGHT);
+            }
+        }
+        if (applicableFences.contains(DIRECTION.Down)) {
+            //left right
+            if (leftRightPlantHasNoFenceForDirection(r, c, DIRECTION.Down)) {
+                overlappedFences.add(DIRECTION.Down);
+            }
+        }
+
+        if (plantsFenceMap[r][c] == null) {
+            plantsFenceMap[r][c] = new Plant(r, c, applicableFences);
+        }
+        return overlappedFences;
+    }
+
+    private boolean upDownPlantHasNoFenceForDirection(int r, int c, DIRECTION d) {
+        Character plantType = gardenMap[r][c];
+
+        Character upPlantType = r == 0 ? null : gardenMap[r - 1][c];
+        Character downPlantType = r == gardenMap.length - 1 ? null : gardenMap[r + 1][c];
+
+        boolean upfencePresent = false;
+        if (upPlantType == plantType) {
+            Plant plant = plantsFenceMap[r - 1][c];
+            upfencePresent = plant != null && plant.fenceDirections != null && plant.fenceDirections.contains(d);
+
+        }
+        boolean downFencePresent = false;
+        if (downPlantType == plantType) {
+            Plant plant = plantsFenceMap[r + 1][c];
+            downFencePresent = plant != null && plant.fenceDirections != null && plant.fenceDirections.contains(d);
+        }
+
+        return !upfencePresent && !downFencePresent;
+    }
+
+    private boolean leftRightPlantHasNoFenceForDirection(int r, int c, DIRECTION d) {
+        Character plantType = gardenMap[r][c];
+
+        Character leftPlantType = c == 0 ? null : gardenMap[r][c - 1];
+        Character rightPlantType = c == gardenMap[0].length - 1 ? null : gardenMap[r][c + 1];
+
+        boolean leftFencePresent = false;
+        if (leftPlantType == plantType) {
+            Plant plant = plantsFenceMap[r][c - 1];
+            leftFencePresent = plant != null && plant.fenceDirections != null && plant.fenceDirections.contains(d);
+
+        }
+        boolean rightFencePresent = false;
+        if (rightPlantType == plantType) {
+            Plant plant = plantsFenceMap[r][c + 1];
+            rightFencePresent = plant != null && plant.fenceDirections != null && plant.fenceDirections.contains(d);
+        }
+
+        return !leftFencePresent && !rightFencePresent;
+    }
+
+    private void solutionPart1() {
+        solution("1");
+    }
+    private void solutionPart2() {
+        solution("2");
+    }
     public static void main(String[] args) {
         Day12 d = new Day12();
         d.solutionPart1();
+        d.solutionPart2();
     }
 }
