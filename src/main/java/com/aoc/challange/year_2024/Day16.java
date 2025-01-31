@@ -19,7 +19,7 @@ public class Day16 {
         RIGHT
     }
 
-    private record Step(int cost, int r, int c, Direction d) {
+    private record Step(int cost, int r, int c, Direction d, Set<String> previousSteps) {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -34,6 +34,52 @@ public class Day16 {
         }
     }
 
+    private void solution() {
+        Map<Integer, Set<String>> stepsForCost = new HashMap<>();
+        PriorityQueue<Step> q = new PriorityQueue<>(Comparator.comparingInt(p -> p.cost));
+        initializeMaze();
+        q.add(new Step(0, sr, sc, Direction.RIGHT, new HashSet<>(0)));
+        List<Step> seen = new ArrayList<>();
+        Step min = null;
+        while (!q.isEmpty()) {
+            Step cs = q.poll();
+            seen.add(cs);
+            if (maze[cs.r][cs.c].equals("E")) {
+                if (min == null || cs.cost <= min.cost) {
+                    min = cs;
+                }
+                Set<String> paths = stepsForCost.getOrDefault(cs.cost, new HashSet<>());
+                paths.addAll(cs.previousSteps);
+                paths.add(String.format("%s-%s", cs.r, cs.c));
+                stepsForCost.put(cs.cost, paths);
+            }
+
+            Set<String> pSteps = new HashSet<>(cs.previousSteps);
+            pSteps.add(String.format("%s-%s", cs.r, cs.c));
+
+            for (Direction d : getApplicableDirections(cs.d)) {
+                int stepScore = d != cs.d ? 1001 : 1;
+                int r1 = cs.r, c1 = cs.c;
+                if (d == Direction.UP) {
+                    r1 = cs.r - 1;
+                } else if (d == Direction.DOWN) {
+                    r1 = cs.r + 1;
+                } else if (d == Direction.LEFT) {
+                    c1 = cs.c - 1;
+                } else {
+                    c1 = cs.c + 1;
+                }
+                Step nextStep = new Step(cs.cost + stepScore, r1, c1, d, pSteps);
+                if (!(r1 < 0 || r1 > maze.length - 1 || c1 < 0 || c1 > maze[0].length - 1) && !maze[r1][c1].equals("#") && !seen.contains(nextStep)) {
+                    q.add(nextStep);
+                }
+            }
+        }
+        System.out.println("=====================part1: " + min.cost);
+        System.out.println("=====================part2: " + stepsForCost.get(min.cost).size());
+        //5191 too high;
+    }
+
     private void initializeMaze() {
         List<String> l = InputFormatter.formatLines("input/2024/Day16").stream().toList();
         maze = new String[l.size()][l.get(0).length()];
@@ -46,41 +92,6 @@ public class Day16 {
             }
             i++;
         }
-    }
-
-    private void solutionPart1() {
-        PriorityQueue<Step> q = new PriorityQueue<>(Comparator.comparingInt(p -> p.cost));
-        initializeMaze();
-        q.add(new Step(0, sr, sc, Direction.RIGHT));
-        List<Step> seen = new ArrayList<>();
-        int cost = -1;
-        while (!q.isEmpty()) {
-            Step cs = q.poll();
-            seen.add(cs);
-            //System.out.println(cs.r+","+cs.c+","+cs.cost);
-            if (maze[cs.r][cs.c].equals("E")) {
-                cost = cs.cost;
-                break;
-            }
-            getApplicableDirections(cs.d).forEach(d -> {
-                int stepScore = d != cs.d ? 1001 : 1;
-                int r1 = cs.r, c1 = cs.c;
-                if (d == Direction.UP) {
-                    r1 = cs.r - 1;
-                } else if (d == Direction.DOWN) {
-                    r1 = cs.r + 1;
-                } else if (d == Direction.LEFT) {
-                    c1 = cs.c - 1;
-                } else {
-                    c1 = cs.c + 1;
-                }
-                Step nextStep = new Step(cs.cost + stepScore, r1, c1, d);
-                if (!(r1 < 0 || r1 > maze.length - 1 || c1 < 0 || c1 > maze[0].length - 1) && !maze[r1][c1].equals("#") && !seen.contains(nextStep)) {
-                    q.add(nextStep);
-                }
-            });
-        }
-        System.out.println(cost);
     }
 
     private List<Direction> getApplicableDirections(Direction cd) {
@@ -107,6 +118,6 @@ public class Day16 {
 
     public static void main(String[] args) {
         Day16 d = new Day16();
-        d.solutionPart1();
+        d.solution();
     }
 }
