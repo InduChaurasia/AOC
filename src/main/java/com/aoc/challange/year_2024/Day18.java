@@ -12,7 +12,6 @@ import java.util.stream.IntStream;
 public class Day18 {
     private static int M_SIZE;
     private void solution(int limit) {
-        //0:left 1:up 2:right 3:down
         char[][] grid = initilizeGrid(limit);
         int[][] sGrid = initilizeScoreGrid();
         while (sGrid[0][0] == Integer.MAX_VALUE) {
@@ -59,6 +58,6 @@ public class Day18 {
         Day18.M_SIZE = 71;
         Day18 d = new Day18();
         d.solution(1024);
-        //part 2 answer 2903
+        //part 2 answer 2903, when solution while loop runs infinitely.
     }
 }
