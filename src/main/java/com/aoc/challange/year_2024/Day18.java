@@ -16,8 +16,9 @@ public class Day18 {
     private int solution(int limit) {
         char[][] grid = initilizeGrid(limit);
         int[][] sGrid = initilizeScoreGrid();
-        while (sGrid[0][0] == Integer.MAX_VALUE) {
-            int cellsWithValidScore = 0;
+        int cellsWithValidScore = 1;
+        while (cellsWithValidScore != 0) {
+            cellsWithValidScore = 0;
             for (int i = M_SIZE - 1; i >= 0; i--) {
                 for (int j = M_SIZE - 1; j >= 0; j--) {
                     if (grid[i][j] != '#' && sGrid[i][j] == Integer.MAX_VALUE) {
@@ -32,11 +33,6 @@ public class Day18 {
                         }
                     }
                 }
-            }
-
-            if (cellsWithValidScore == 0) {
-                System.out.println("No path after limit :" + limit);
-                break;
             }
         }
         return sGrid[0][0];
@@ -78,6 +74,7 @@ public class Day18 {
         for (int i = 0; i < INPUT_SIZE; i++) {
             int score = solution(i);
             if (score == Integer.MAX_VALUE) {
+                System.out.println("No path after limit :" + i);
                 break;
             }
         }
