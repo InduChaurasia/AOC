@@ -11,10 +11,13 @@ import java.util.stream.IntStream;
  */
 public class Day18 {
     private static int M_SIZE;
-    private void solution(int limit) {
+    private static int INPUT_SIZE;
+
+    private int solution(int limit) {
         char[][] grid = initilizeGrid(limit);
         int[][] sGrid = initilizeScoreGrid();
         while (sGrid[0][0] == Integer.MAX_VALUE) {
+            int cellsWithValidScore = 0;
             for (int i = M_SIZE - 1; i >= 0; i--) {
                 for (int j = M_SIZE - 1; j >= 0; j--) {
                     if (grid[i][j] != '#' && sGrid[i][j] == Integer.MAX_VALUE) {
@@ -24,17 +27,25 @@ public class Day18 {
                         int right = j < M_SIZE - 1 ? sGrid[i][j + 1] : Integer.MAX_VALUE;
                         int score = Math.min(up, Math.min(down, Math.min(left, right)));
                         sGrid[i][j] = score == Integer.MAX_VALUE ? score : score + 1;
+                        if (score != Integer.MAX_VALUE) {
+                            cellsWithValidScore++;
+                        }
                     }
                 }
             }
-        }
 
-        System.out.println(sGrid[0][0]);
+            if (cellsWithValidScore == 0) {
+                System.out.println("No path after limit :" + limit);
+                break;
+            }
+        }
+        return sGrid[0][0];
     }
 
     private char[][] initilizeGrid(int limit) {
         char[][] grid = new char[M_SIZE][M_SIZE];
         List<String> coordinates = InputFormatter.formatLines("input/2024/Day18").stream().toList();
+        INPUT_SIZE = coordinates.size();
         IntStream.range(0, limit).mapToObj(index -> coordinates.get(index).split(",")).forEach(arr -> {
             int row = Integer.parseInt(arr[1]);
             int column = Integer.parseInt(arr[0]);
@@ -54,10 +65,27 @@ public class Day18 {
         return grid;
     }
 
+    private void solutionPart1() {
+        M_SIZE = 71;
+        int score = solution(1024);
+        if (score != Integer.MAX_VALUE) {
+            System.out.println("Min path score: " + score + " for limit: " + 1024);
+        }
+    }
+
+    private void solutionPart2() {
+        M_SIZE = 71;
+        for (int i = 0; i < INPUT_SIZE; i++) {
+            int score = solution(i);
+            if (score == Integer.MAX_VALUE) {
+                break;
+            }
+        }
+    }
+
     public static void main(String[] args) {
-        Day18.M_SIZE = 71;
         Day18 d = new Day18();
-        d.solution(1024);
-        //part 2 answer 2903, when solution while loop runs infinitely.
+        d.solutionPart1();
+        d.solutionPart2();
     }
 }
