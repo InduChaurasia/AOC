@@ -28,7 +28,6 @@ public class Day23 {
     }
 
     private void solutionPart1() {
-        initialiseNodes();
         Set<String> triplets = new HashSet<>();
         List<Node> tNodes = nodes.values().stream().filter(n -> n.val.startsWith("t")).toList();
         for (Node n1 : tNodes) {
@@ -58,12 +57,11 @@ public class Day23 {
     }
 
     private void solutionPart2() {
-        initialiseNodes();
         String maxLengthlan = "";
-        for (Node n : nodes.values()) {
+        for (String n : nodes.keySet()) {
             TreeSet<String> subset = new TreeSet<>();
-            subset.add(n.val);
-            String lan = maxLengthLan(subset, n.connections, 0);
+            subset.add(nodes.get(n).val);
+            String lan = maxLengthLan(subset, nodes.get(n).connections, 0);
             if (lan.length() >= maxLengthlan.length()) {
                 maxLengthlan = lan;
             }
@@ -94,9 +92,14 @@ public class Day23 {
         return subset.stream().allMatch(node -> nodes.get(node).connections.contains(toMatch));
     }
 
+    private void solution() {
+        initialiseNodes();
+        solutionPart1();
+        solutionPart2();
+    }
+
     public static void main(String[] args) {
         Day23 d = new Day23();
-        d.solutionPart1();
-        d.solutionPart2();
+        d.solution();
     }
 }
