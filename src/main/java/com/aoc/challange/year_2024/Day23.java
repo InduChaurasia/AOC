@@ -35,7 +35,7 @@ public class Day23 {
             subset.add(n1.val);
             triplets(subset, n1.connections, 0, triplets);
         }
-        System.out.println(triplets.size());
+        System.out.printf("triplets with at least one t node: %s%n", triplets.size());
     }
 
     private void triplets(TreeSet<String> subset, List<String> options, int currentIndex, Set<String> result) {
