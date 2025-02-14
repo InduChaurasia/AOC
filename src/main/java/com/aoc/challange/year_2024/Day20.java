@@ -3,6 +3,7 @@ package com.aoc.challange.year_2024;
 import com.aoc.challange.utils.InputFormatter;
 
 import java.util.*;
+import java.util.stream.IntStream;
 
 /**
  * @see <a href="https://adventofcode.com/2024/day/20/problem description</a>
@@ -27,7 +28,7 @@ public class Day20 {
 
     private char[][] maze;
     private Point start;
-    private final Map<Point, Integer> distanceMap = new HashMap<>();
+    private final List<Point> racePoints = new ArrayList<>();
 
     private void initialiseInputs() {
         List<String> inputs = new ArrayList<>(InputFormatter.formatLines("input/2024/Day20").stream().toList());
@@ -57,7 +58,7 @@ public class Day20 {
             Point cp = q.poll();
             int r = cp.x;
             int c = cp.y;
-            distanceMap.put(cp, cp.distance);
+            racePoints.add(cp);
             if (maze[r][c] == 'E') {
                 pathLength = cp.distance;
                 break;
@@ -68,7 +69,7 @@ public class Day20 {
             nextPoints.add(new Point(r - 1, c, -1));
             nextPoints.add(new Point(r + 1, c, -1));
             for (Point p : nextPoints) {
-                if (isIndexValid(p) && maze[p.x][p.y] != '#' && !distanceMap.containsKey(p)) {
+                if (isIndexValid(p) && maze[p.x][p.y] != '#' && !racePoints.contains(p)) {
                     Point p1 = new Point(p.x, p.y, cp.distance + 1);
                     q.add(p1);
                 }
@@ -77,42 +78,22 @@ public class Day20 {
         return pathLength;
     }
 
-    private Set<Point> findPossiblePoints(Point p, int t) {
-        Set<Point> uniqueSet = new HashSet<>();
-        for (int t1 = 0; t1 <= t; t1++) {
-            int t2 = t - t1;
-            uniqueSet.add(new Point(p.x - t1, p.y + t2, 0));
-            uniqueSet.add(new Point(p.x + t1, p.y + t2, 0));
-            uniqueSet.add(new Point(p.x - t1, p.y - t2, 0));
-            uniqueSet.add(new Point(p.x + t1, p.y - t2, 0));
-        }
-        return uniqueSet;
-    }
-
     private void findCheatWays(int maxCheatTime) {
         long start = System.currentTimeMillis();
-        Map<Integer, Integer> saveAndCheatWays = new HashMap<>();
-        for (Point p1 : distanceMap.keySet()) {
-            int d1 = distanceMap.get(p1);
-            for (int cheat = 2; cheat <= maxCheatTime; cheat++) {
-                Set<Point> possiblePoints = findPossiblePoints(p1, cheat);
-                for (Point p2 : possiblePoints) {
-                    if (isIndexValid(p2) && distanceMap.containsKey(p2) && distanceMap.get(p2) - d1 >= (100 + cheat)) {
-                        int save = distanceMap.get(p2) - d1;
-                        saveAndCheatWays.put(save, saveAndCheatWays.getOrDefault(save, 0) + 1);
-                    }
-                }
-            }
+        long count = 0;
+        for (int i = 0; i < racePoints.size() - 1; i++) {
+            Point p1 = racePoints.get(i);
+            long cheatCount = IntStream.range(i, racePoints.size()).filter(index -> {
+                Point p2 = racePoints.get(index);
+                int cheatTime = Math.abs(p2.x - p1.x) + Math.abs(p2.y - p1.y);
+                int pathDistance = Math.abs(p2.distance - p1.distance);
+                return cheatTime >= 2 && cheatTime <= maxCheatTime && pathDistance >= (100 + cheatTime);
+            }).count();
+            count += cheatCount;
         }
-
-        int count = 0;
-        for (Integer i : saveAndCheatWays.keySet().stream().sorted().toList()) {
-            count += saveAndCheatWays.get(i);
-            // System.out.printf("save %s , ways %s%n", i, saveAndCheatWays.get(i));
-        }
-        System.out.printf("For max cheat time %s, no of ways %s%n", maxCheatTime, count);
+        System.out.printf("For max cheat time %s, no of cheat ways %s%n", maxCheatTime, count);
         long end = System.currentTimeMillis();
-        System.out.printf("time taken: %s millis%n",end-start);
+        System.out.printf("Time taken to calculate cheat ways for max cheat time %s : %s millis%n", maxCheatTime,end - start);
     }
 
     private void solution() {
