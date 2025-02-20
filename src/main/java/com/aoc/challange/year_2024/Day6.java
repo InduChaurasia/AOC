@@ -12,7 +12,6 @@ import java.util.*;
 public class Day6 {
     private GuardLocation igl;
     private final char[][] pathMatrix = getPathMatrix();
-    private Map<String, Set<DIRECTION>> traversedPath = new HashMap<>();
 
     private enum DIRECTION {
         UP,
@@ -21,27 +20,18 @@ public class Day6 {
         RIGHT
     }
 
-    private static class GuardLocation {
-        private final int cr;
-        private final int cc;
-        private final DIRECTION direction;
-
-        public GuardLocation(int cr, int cc, DIRECTION d) {
-            this.cr = cr;
-            this.cc = cc;
-            this.direction = d;
+    private record GuardLocation(int cr, int cc, DIRECTION d) {
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            GuardLocation that = (GuardLocation) o;
+            return cr == that.cr && cc == that.cc && d == that.d;
         }
 
-        public int getCr() {
-            return cr;
-        }
-
-        public int getCc() {
-            return cc;
-        }
-
-        public DIRECTION getDirection() {
-            return direction;
+        @Override
+        public int hashCode() {
+            return Objects.hash(cr, cc, d);
         }
     }
 
@@ -63,106 +53,94 @@ public class Day6 {
     }
 
     private GuardLocation moveInDirection(GuardLocation gl) {
-        int cgr = gl.getCr();
-        int cgc = gl.getCc();
-        switch (gl.getDirection()) {
-            case UP: {
-                cgr--;
-                break;
-            }
-            case DOWN: {
-                cgr++;
-                break;
-            }
-            case LEFT: {
-                cgc--;
-                break;
-            }
-            case RIGHT: {
-                cgc++;
-                break;
-            }
-            default: {
-                throw new RuntimeException("invalid direction");
-            }
+        int cgr = gl.cr;
+        int cgc = gl.cc;
+        switch (gl.d) {
+            case UP -> cgr--;
+            case DOWN -> cgr++;
+            case LEFT -> cgc--;
+            case RIGHT -> cgc++;
+            default -> throw new RuntimeException("invalid direction");
         }
-        return new GuardLocation(cgr, cgc, gl.getDirection());
+        return new GuardLocation(cgr, cgc, gl.d);
     }
 
     private GuardLocation changeDirection(GuardLocation gl) {
-        int cgr = gl.getCr();
-        int cgc = gl.getCc();
+        int cgr = gl.cr;
+        int cgc = gl.cc;
         DIRECTION cd;
-        switch (gl.getDirection()) {
-            case UP: {
+        switch (gl.d) {
+            case UP -> {
                 cgr++;
                 cd = DIRECTION.RIGHT;
-                break;
             }
-            case DOWN: {
+            case DOWN -> {
                 cgr--;
                 cd = DIRECTION.LEFT;
-                break;
             }
-            case LEFT: {
+            case LEFT -> {
                 cgc++;
                 cd = DIRECTION.UP;
-                break;
             }
-            case RIGHT: {
+            case RIGHT -> {
                 cgc--;
                 cd = DIRECTION.DOWN;
-                break;
             }
-            default: {
-                throw new RuntimeException("invalid direction");
-            }
+            default -> throw new RuntimeException("invalid direction");
         }
 
         return new GuardLocation(cgr, cgc, cd);
     }
 
-    private void updateTraversedPath(GuardLocation gl) {
-        int cgr = gl.getCr();
-        int cgc = gl.getCc();
-        String key = String.format("%s,%s", cgr, cgc);
-        Set<DIRECTION> vds = traversedPath.getOrDefault(key, new HashSet<>());
-        vds.add(gl.getDirection());
-        traversedPath.put(key, vds);
-    }
-
-    /**
-     * @see <a href="file:resources/input/2024/Day4">/resources/input/2024/Day6 for input</a>
-     */
-    private void findGuardPath() {
-        traversedPath = new HashMap<>();
+    private Set<String> findGuardPath() {
+        Set<String> distinctPaths = new HashSet<>();
+        List<GuardLocation> obstacles = new ArrayList<>();
         int r = pathMatrix.length;
         int c = pathMatrix[0].length;
-        int cgr = igl.getCr();
-        int cgc = igl.getCc();
-        DIRECTION cd = igl.getDirection();
-        while (cgr >= 0 && cgr < r && cgc >= 0 && cgc < c) {
-            GuardLocation cgl = new GuardLocation(cgr, cgc, cd);
-            if (pathMatrix[cgr][cgc] != '#') {
-                updateTraversedPath(cgl);
-                GuardLocation ugl = moveInDirection(cgl);
-                cgr = ugl.getCr();
-                cgc = ugl.getCc();
-
+        GuardLocation cgl = igl;
+        while (cgl.cr >= 0 && cgl.cr < r && cgl.cc >= 0 && cgl.cc < c) {
+            if (pathMatrix[cgl.cr][cgl.cc] != '#') {
+                distinctPaths.add(String.format("%s,%s", cgl.cr, cgl.cc));
+                cgl = moveInDirection(cgl);
             } else {
-                GuardLocation ugl = changeDirection(cgl);
-                cgr = ugl.getCr();
-                cgc = ugl.getCc();
-                cd = ugl.getDirection();
+                if (obstacles.contains(cgl)) {
+                    distinctPaths.clear();
+                    break;
+                }
+                obstacles.add(cgl);
+                cgl = changeDirection(cgl);
             }
-
         }
-        System.out.println(traversedPath.size());
+        return distinctPaths;
+    }
+
+    private Set<String> findObstaclesForLoop() {
+        Set<String> guardPath = findGuardPath();
+        Set<String> obstacles = new HashSet<>();
+        for (String s : guardPath) {
+            String[] split = s.split(",");
+            int r = Integer.parseInt(split[0]);
+            int c = Integer.parseInt(split[1]);
+            if(igl.cr!=r || igl.cc!=c){
+                pathMatrix[r][c] = '#';
+                if(findGuardPath().isEmpty()){
+                    obstacles.add(String.format("%s,%s",r,c));
+                }
+                pathMatrix[r][c] = '.';
+            }
+        }
+        return obstacles;
+    }
+
+    private void solution() {
+        Set<String> guardPath = findGuardPath();
+        System.out.printf("Distinct guard path length: %s%n", guardPath.size());
+        Set<String> obstacles = findObstaclesForLoop();
+        System.out.printf("No of obstacles to form loop: %s%n",obstacles.size());
     }
 
     public static void main(String[] args) {
         Day6 d = new Day6();
-        System.out.println("Part1 output: ");
-        d.findGuardPath();
+        d.solution();
     }
 }
