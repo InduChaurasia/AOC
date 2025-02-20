@@ -1,9 +1,7 @@
 package com.aoc.challange.year_2024;
 
 import com.aoc.challange.utils.InputFormatter;
-
 import java.util.*;
-import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 /**
@@ -12,68 +10,97 @@ import java.util.stream.LongStream;
  */
 public class Day9 {
     private final String diskMap = readInput();
+    private final Map<Integer, Integer> blockSizeMap = new HashMap<>();
 
     private String readInput() {
         return InputFormatter.formatLines("input/2024/Day9").stream().toList().get(0);
     }
 
-    private long[] generateFileBlocks() {
+    private int[] generateBlocks() {
+        List<Integer> blocks = new ArrayList<>();
         String[] arr = diskMap.split("");
-        return IntStream.range(0, arr.length).mapToObj(i -> {
+        for (int i = 0; i < arr.length; i++) {
             int n = Integer.parseInt(arr[i]);
-            int fileIndex = i / 2;
+            int blockIndex = i / 2;
             boolean isFile = i % 2 == 0;
-            String val = isFile ? String.valueOf(fileIndex) : "-1";
-            List<Long> diskBlocks = new ArrayList<>(n);
+            //assign positive value for file blocks and negative value for space
+            int val = isFile ? blockIndex : -1 * blockIndex;
+            //exception case when space index is 0 handled here
+            if (!isFile && val == 0) {
+                val = Integer.MIN_VALUE;
+            }
+            blockSizeMap.put(val, n);
             while (n > 0) {
-                diskBlocks.add(Long.valueOf(val));
+                blocks.add(val);
                 n--;
             }
-            return diskBlocks;
-        }).flatMap(Collection::stream).mapToLong(Long::valueOf).toArray();
-    }
-
-    private int findNextSpaceFromLeft(int fromIndex, int max, long[] arr) {
-        for (int i = fromIndex; i <= max; i++) {
-            if (arr[i] == -1) {
-                return i;
-            }
         }
-        return -1;
+        return blocks.stream().mapToInt(Integer::valueOf).toArray();
     }
 
-    private int findNextFileFromRight(int left, int maxLen, long[] arr) {
-        for (int i = maxLen; i >= left; i--) {
-            if (arr[i] != -1) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private long getChecksum(long[] fileBlocks) {
+    private long getChecksum(int[] fileBlocks) {
         return LongStream.range(0, fileBlocks.length)
-                .filter(index -> fileBlocks[(int) index] != -1)
+                .filter(index -> fileBlocks[(int) index] >= 0)
                 .reduce(0L, (a, b) -> a + fileBlocks[(int) b] * b);
     }
 
     private void solutionPart1() {
-        long[] fileBlocks = generateFileBlocks();
-
-        int left = findNextSpaceFromLeft(0, fileBlocks.length - 1, fileBlocks);
-        int right = findNextFileFromRight(0, fileBlocks.length - 1, fileBlocks);
-
-        while (left < right && left != -1 && right != -1) {
-            fileBlocks[left] = fileBlocks[right];
-            fileBlocks[right] = -1;
-            left = findNextSpaceFromLeft(left + 1, right - 1, fileBlocks);
-            right = findNextFileFromRight(left + 1, right - 1, fileBlocks);
+        int[] blocks = generateBlocks();
+        int left = 0;
+        int right = blocks.length - 1;
+        while (left < right) {
+            while (blocks[left] >= 0) {
+                left++;
+            }
+            while (blocks[right] < 0) {
+                right--;
+            }
+            if (left < right) {
+                blocks[left] = blocks[right];
+                blocks[right] = -1;
+            }
         }
-        System.out.println(getChecksum(fileBlocks));
+        System.out.println(getChecksum(blocks));
+        //6258319840548
+    }
+
+    private void solutionPart2() {
+        int[] blocks = generateBlocks();
+        List<Integer> processedFiles = new ArrayList<>();
+        for (int i = blocks.length - 1; i >= 0; i--) {
+            int fIndex = blocks[i];
+            if (blocks[i] > 0 && !processedFiles.contains(fIndex)) {
+                int fSize = blockSizeMap.get(fIndex);
+                for (int j = 0; j < i; j++) {
+                    int sIndex = blocks[j];
+                    int sSize = blockSizeMap.get(sIndex);
+                    if (sIndex < 0 && sSize >= fSize) {
+                        int n = fSize;
+                        int s = j;
+                        int f = i;
+                        while (n > 0) {
+                            int temp = blocks[s];
+                            blocks[s] = blocks[f];
+                            blocks[f] = temp;
+                            s++;
+                            f--;
+                            n--;
+                        }
+                        blockSizeMap.put(sIndex, sSize - fSize);
+                        break;
+                    }
+                }
+                processedFiles.add(fIndex);
+                i = i - fSize + 1;
+            }
+        }
+        System.out.println(getChecksum(blocks));
+        //6286182965311
     }
 
     public static void main(String[] args) {
         Day9 d = new Day9();
         d.solutionPart1();
+        d.solutionPart2();
     }
 }
