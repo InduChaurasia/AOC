@@ -3,6 +3,7 @@ package com.aoc.challange.year_2024;
 import com.aoc.challange.utils.InputFormatter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -10,17 +11,12 @@ import java.util.List;
  * @see <a href="https://adventofcode.com/2024/day/17/input">input</a>
  */
 public class Day17 {
-    private long A = 0;
-    private long B = 0;
-    private long C = 0;
     private int[] program;
+    private long[] registers;
 
     private void initializeInputs() {
         List<String> l = InputFormatter.formatLines("input/2024/Day17").stream().toList();
-        String[] registers = l.get(0).replace("Register ", "").split(",");
-        A = Integer.parseInt(registers[0].split(":")[1]);
-        B = Integer.parseInt(registers[1].split(":")[1]);
-        C = Integer.parseInt(registers[2].split(":")[1]);
+        registers = Arrays.stream(l.get(0).replace("Register ", "").split(",")).map(val -> val.split(":")[1]).mapToLong(Long::valueOf).toArray();
         String s = l.get(1).replace("Program ", "").replace(",", "");
         program = new int[s.length()];
         for (int i = 0; i < s.length(); i++) {
@@ -28,7 +24,7 @@ public class Day17 {
         }
     }
 
-    private long getComboVal(int val) {
+    private long getComboVal(int val, long A, long B, long C) {
         if (val >= 0 && val <= 3) {
             return val;
         }
@@ -44,57 +40,81 @@ public class Day17 {
         throw new RuntimeException("invalid val " + val);
     }
 
-    private List<String> program(int programIndex) {
-        List<String> out = new ArrayList<>(1);
-        int opCode = program[programIndex];
-        int operand = program[programIndex + 1];
-        switch (opCode) {
-            case 0 -> A = (long) (A / Math.pow(2, getComboVal(operand)));
-            case 1 -> B = (B ^ operand);
-            case 2 -> B = getComboVal(operand) % 8;
-            case 3 -> {/*do nothing*/}
-            case 4 -> B = B ^ C;
-            case 5 -> {
-                long val = getComboVal(operand) % 8;
-                out.add(String.valueOf(val));
+    private List<Long> solutionPart1() {
+        List<Long> out = new ArrayList<>(1);
+        int index = 0;
+        long A = registers[0];
+        long B = registers[1];
+        long C = registers[2];
+
+        while (index < program.length - 1) {
+            int opCode = program[index];
+            int operand = program[index + 1];
+            if (opCode == 0) {
+                A = A >> getComboVal(operand, A, B, C);
+            } else if (opCode == 1) {
+                B = (B ^ operand);
+            } else if (opCode == 2) {
+                B = getComboVal(operand, A, B, C) % 8;
+            } else if (opCode == 3) {
+                if (A != 0) {
+                    index = operand;
+                    continue;
+                }
+            } else if (opCode == 4) {
+                B = B ^ C;
+            } else if (opCode == 5) {
+                out.add((getComboVal(operand, A, B, C) % 8));
+            } else if (opCode == 6) {
+                B = A >> getComboVal(operand, A, B, C);
+            } else if (opCode == 7) {
+                C = A >> getComboVal(operand, A, B, C);
+            } else {
+                throw new RuntimeException("invalid program " + opCode);
             }
-            case 6 -> B = (long) (A / Math.pow(2, getComboVal(operand)));
-            case 7 -> C = (long) (A / Math.pow(2, getComboVal(operand)));
-            default -> throw new RuntimeException("invalid program " + opCode);
+            index = index + 2;
         }
         return out;
     }
 
-    private List<String> runProgram() {
-        List<String> outputs = new ArrayList<>();
-        int programIndex = 0;
-        while (programIndex < program.length) {
-            int opCode = program[programIndex];
-            int operand = program[programIndex + 1];
-            List<String> out = program(programIndex);
-            if (!out.isEmpty()) {
-                outputs.add(out.get(0));
-            }
-            programIndex = opCode != 3 ? programIndex + 2 : A == 0 ? programIndex + 2 : operand;
+    private long solutionPart2(int index, long ans) {
+        long out = -1;
+        if (index == -1) {
+            return ans;
         }
-        return outputs;
+        //for loop handles instruction (2,4)
+        for (int b = 0; b < 8; b++) {
+            long B = b;
+            long A = (ans << 3) + B; //(0,3)
+            B = B ^ 1; //(1,1)
+            long C = A >> B; //(7,5)
+            B = B ^ 5; //(1,5)
+            B = B ^ C; //(4,3)
+            long o = (B % 8); //(5,5)
+            if (o == program[index]) {
+                long r1 = solutionPart2(index - 1, A);
+                if (r1 != -1) {
+                    out = r1;
+                    break;
+                }
+            }
+        }
+        return out;
     }
-
-    private void solutionPart1() {
-        List<String> outputs = runProgram();
-        System.out.println("part1: " + String.join(",", outputs));
-    }
-
 
     private void solution() {
         initializeInputs();
-        solutionPart1();
+        for (Long l : solutionPart1()) {
+            System.out.printf("%s, ", l);
+        }
+        System.out.println();
+        long l = solutionPart2(program.length - 1, 0);
+        System.out.println("min val for A: " + l);
     }
 
     public static void main(String[] args) {
         Day17 d = new Day17();
         d.solution();
-
     }
 
 }
