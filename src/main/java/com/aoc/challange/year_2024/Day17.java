@@ -9,6 +9,7 @@ import java.util.List;
 /**
  * @see <a href="https://adventofcode.com/2024/day/17">problem description</a>
  * @see <a href="https://adventofcode.com/2024/day/17/input">input</a>
+ * @see <a href="https://www.youtube.com/watch?v=y-UPxMAh2N8">Solution credit to HyperNeutrino algo</a>
  */
 public class Day17 {
     private int[] program;
