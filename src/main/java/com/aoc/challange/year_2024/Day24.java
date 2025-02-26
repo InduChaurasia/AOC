@@ -20,14 +20,16 @@ public class Day24 {
     }
 
     private final Map<String, Wire> wireNameMap = new TreeMap<>();
-    private final Map<String, Integer> wireValues = new HashMap<>();
+    private final Map<String, Integer> calculatedValues = new HashMap<>();
+    private final Map<String, Integer> expectedValues = new HashMap<>();
 
     private void initialiseWire() {
 
         List<String> inputs1 = new ArrayList<>(InputFormatter.formatLines("input/2024/Day24_1").stream().toList());
         for (String s : inputs1) {
             String[] splits = s.split(": ");
-            wireValues.put(splits[0], Integer.parseInt(splits[1]));
+            calculatedValues.put(splits[0], Integer.parseInt(splits[1]));
+            expectedValues.put(splits[0], Integer.parseInt(splits[1]));
         }
 
         List<String> inputs2 = new ArrayList<>(InputFormatter.formatLines("input/2024/Day24_2").stream().toList());
@@ -39,6 +41,7 @@ public class Day24 {
             String[] inputs = new String[2];
             inputs[0] = split2[0];
             inputs[1] = split2[2];
+            Arrays.sort(inputs);
             String gate = split2[1];
 
             String name = split1[1];
@@ -61,8 +64,8 @@ public class Day24 {
 
     private int calculateValue(String wireName) {
 
-        if (wireValues.containsKey(wireName)) {
-            return wireValues.get(wireName);
+        if (calculatedValues.containsKey(wireName)) {
+            return calculatedValues.get(wireName);
         }
 
         Wire w = wireNameMap.get(wireName);
@@ -72,9 +75,47 @@ public class Day24 {
 
         int val = operation(OPERATION.valueOf(w.gate), wireVal1, wireVal2);
         if (val != -1) {
-            wireValues.put(w.name, val);
+            calculatedValues.put(w.name, val);
         }
         return val;
+    }
+    private void calculateExpectedValue(String wireName) {
+        String suffix = wireName.substring(1);
+        String x = "x" + suffix;
+        String y = "y" + suffix;
+        String c = "c" + suffix;
+        int val;
+        int co;
+        if (suffix.equals("00")) {
+            val = expectedValues.get(x) ^ expectedValues.get(y);
+            co = expectedValues.get(x) & expectedValues.get(y);
+        } else {
+            String ps = String.valueOf(Integer.parseInt(suffix) - 1);
+            String pco = "c" + (ps.length() == 2 ? ps : "0" + ps);
+            val = expectedValues.get(pco) ^ (expectedValues.get(x) ^ expectedValues.get(y));
+            co = (expectedValues.get(x) & expectedValues.get(y)) | (expectedValues.get(pco) & (expectedValues.get(x) ^ expectedValues.get(y)));
+        }
+        expectedValues.put(wireName, val);
+        expectedValues.put(c, co);
+    }
+    private String printWireMapping(String wireName, int index) {
+        Wire w = wireNameMap.get(wireName);
+        if (wireName.startsWith("x") | wireName.startsWith("y") || w == null) {
+            return "";
+        }
+        String indent = " ".repeat(index);
+        String wire = String.format("%s %s %s", w.inputs[0], w.gate, w.inputs[1]);
+        String input1 = String.format("%s%s", indent, printWireMapping(w.inputs[0], index + 1));
+        String input2 = String.format("%s%s", indent, printWireMapping(w.inputs[1], index + 1));
+        if (!input1.isBlank() && !input2.isBlank()) {
+            return String.format("%s = %s%n%s%n%s", wireName, wire, input1, input2);
+        } else if (!input1.isBlank()) {
+            return String.format("%s = %s%n%s", wireName, wire, input1);
+        } else if (!input2.isBlank()) {
+            return String.format("%s = %s%n%s", wireName, wire, input2);
+        } else {
+            return String.format("%s = %s", wireName, wire);
+        }
     }
 
     private void solutionPart1() {
@@ -89,15 +130,41 @@ public class Day24 {
         System.out.println(result);
     }
 
+    private void solutionPart2() {
+        List<String> wireNames = wireNameMap.keySet().stream().filter(name -> name.startsWith("z")).sorted().toList();
+        for (int i = 0; i < wireNames.size(); i++) {
+            String wireName = wireNames.get(i);
+            if (i == wireNames.size() - 1) {
+                String suffix = wireName.substring(1);
+                String ps = String.valueOf(Integer.parseInt(suffix) - 1);
+                String pco = "c" + (ps.length() == 2 ? ps : "0" + ps);
+                Integer co = expectedValues.get(pco);
+                if (co != null) {
+                    expectedValues.put(wireName, co);
+                }
+            } else {
+                calculateExpectedValue(wireName);
+            }
+            if (expectedValues.get(wireName) == null || !(expectedValues.get(wireName).equals(calculatedValues.get(wireName)))) {
+                System.out.println(wireName);
+            }
+        }
+        //printWireMapping(wireName,1);
+        //manually checked wrong wire mappings for wires having expectedVal != calculatedVal
+        String[] wrongOutputs = {"tst","z05","sps","z11","z23","frt","cgh","pmd"};
+        Arrays.sort(wrongOutputs);
+        System.out.println(String.join(",",wrongOutputs));
+    }
+
     private void solution() {
         initialiseWire();
         solutionPart1();
+        solutionPart2();
     }
 
     public static void main(String[] args) {
         Day24 d = new Day24();
         d.solution();
     }
-
 
 }
