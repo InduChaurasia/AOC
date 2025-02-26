@@ -14,7 +14,9 @@ public class Day14 {
 
     private static final int WIDTH = 101;
     private static final int HEIGHT = 103;
-    private static final int timeInSeconds = 100;
+    private static int timeInSeconds = 100;
+
+    private static int lowestFactor = Integer.MAX_VALUE;
 
     private record Robot(int px, int py, int vx, int vy) {
     }
@@ -32,16 +34,12 @@ public class Day14 {
         return robots;
     }
 
-    private void solutionPart1() {
-        List<Robot> robots = getRobotsUpdatedLocationsAfterTime();
-        int robotsPresenceFactor = getRobotsPresenceFactor(robots);
-        System.out.println(robotsPresenceFactor);
-    }
-
     private List<Robot> getRobotsUpdatedLocationsAfterTime() {
         int t = 0;
+        int time = 0;
         List<Robot> robots = getRobots();
-        while (t <= Day14.timeInSeconds) {
+        while (t <= timeInSeconds) {
+            int[][] map = new int[HEIGHT][WIDTH];
             List<Robot> updatedRobots = new ArrayList<>();
             for (Robot robot : robots) {
                 int x = robot.px;
@@ -63,10 +61,22 @@ public class Day14 {
                     y = y - HEIGHT;
                 }
                 updatedRobots.add(new Robot(x, y, robot.vx, robot.vy));
+                map[y][x] = 1;
             }
             robots = updatedRobots;
+            int robotsPresenceFactor = getRobotsPresenceFactor(robots);
+
+            if (robotsPresenceFactor < lowestFactor) {
+                lowestFactor = robotsPresenceFactor;
+                time = t;
+                //because at 6355 time presence factor was lowest
+                if (t == 6355) {
+                    print(map);
+                }
+            }
             t++;
         }
+        System.out.printf("lowest presence factor fount at %s sec for range (0-%s)%n", time, timeInSeconds);
         return robots;
     }
 
@@ -91,11 +101,40 @@ public class Day14 {
             }
 
         }
-        System.out.printf("q1,q2,q3,q4: %s,%s,%s,%s%n", q1, q2, q3, q4);
+        // System.out.printf("q1,q2,q3,q4: %s,%s,%s,%s%n", q1, q2, q3, q4);
         return q1 * q2 * q3 * q4;
     }
+
+    private void print(int[][] map) {
+        for (int i = 0; i < HEIGHT; i++) {
+            for (int j = 0; j < WIDTH; j++) {
+
+                if (map[i][j] == 1) {
+                    System.out.print("*");
+                } else {
+                    System.out.print(" ");
+                }
+            }
+            System.out.println();
+        }
+    }
+
+    private void solutionPart1() {
+        System.out.println("part1->");
+        List<Robot> robots = getRobotsUpdatedLocationsAfterTime();
+        int robotsPresenceFactor = getRobotsPresenceFactor(robots);
+        System.out.printf("presence factor after time %s : %s%n", timeInSeconds, robotsPresenceFactor);
+    }
+
+    private void solutionPart2() {
+        System.out.println("part2->");
+        timeInSeconds = 10000;
+        getRobotsUpdatedLocationsAfterTime();
+    }
+
     public static void main(String[] args) {
         Day14 d = new Day14();
         d.solutionPart1();
+        d.solutionPart2();
     }
 }
